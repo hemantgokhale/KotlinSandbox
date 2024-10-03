@@ -7,6 +7,7 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.PathWalkOption
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.extension
 import kotlin.io.path.fileSize
 import kotlin.io.path.isRegularFile
@@ -52,8 +53,7 @@ fun findUnusedImages() {
                     FileVisitResult.CONTINUE
             }
             onVisitFile { file, _ ->
-                if (!file.name.startsWith(".")
-                ) {
+                if (!file.name.startsWith(".") && file.extension !in listOf("js", "ttf")) {
                     try {
                         val fileText = file.readText()
                         images.filter { it.isUnused }.forEach { if (fileText.contains("\"${it.name}\"")) it.occurrence = file }
@@ -70,9 +70,9 @@ fun findUnusedImages() {
         val diskUsage = NumberFormat.getInstance().format(unusedImages.sumOf { it.diskUsage })
         println("Total images: ${images.size}, unused: ${unusedImages.size}, occupying $diskUsage bytes on disk.")
         images
-            .filter { it.occurrence != null }
-            .filter { it.occurrence?.extension !in listOf("swift", "m", "xib", "storyboard") }
-            .forEach { println(it) }
+            .filter { it.isUnused }
+            .forEach { it.path.deleteRecursively() }
+
     }
     println("Time taken: $timeTaken")
 }
